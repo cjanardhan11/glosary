@@ -1,0 +1,16 @@
+{
+    "Data": [
+        {
+            "Term": "test term1",
+            "definition": "test def1"
+        },
+        {
+            "Term": "test term2",
+            "definition": "test def2"
+        },
+        {
+            "Term": "test term3",
+            "definition": "test def3"
+        }
+    ]
+}

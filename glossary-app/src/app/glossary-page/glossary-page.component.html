@@ -1,0 +1,93 @@
+    <div class="col-md-12">
+        <div class="header">
+            <a href="#" class="logo">Glossary Application</a>
+          </div>
+          <div class="create-glossary">
+              <button class="btn btn-create" (click)="openCreateModal(template)">Create</button>
+          </div>
+          <div class="glossary-body">
+              <div class="col-md-12 body mt-3">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                      <tr>
+                        <th scope="col">Term</th>
+                        <th scope="col" class="w-50">Definition</th>
+                        <th scope="col">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let res of data['Data']">
+                        <td>{{res.Term}}</td>
+                        <td>{{res.definition}}</td>
+                        <td>
+                            <button class="btn edit-btn" (click)="openUpdateModal(res, updatetemplate)">Edit</button>
+                            <button class="btn del-btn" (click)="openDeleteModal(res, deletetemplate)">Delete</button>
+                        </td>
+                      </tr>
+                      
+                    </tbody>
+                  </table>
+              </div>
+          </div>
+    </div>
+
+    <ng-template #template>
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">Create</h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group mb-4">
+            <label>Term</label>
+            <input type="text" #term class="form-control" placeholder="Enter Term">
+          </div>
+          <div class="form-group">
+            <label>Definition</label>
+            <input type="text" #definition class="form-control" placeholder="Definition">
+          </div>
+          
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="saveFn(term, definition)">Save</button>
+        <button type="button" class="btn btn-danger" (click)="closeModal()">Cancel</button>
+      </div>
+    </ng-template>
+
+
+
+    <ng-template #updatetemplate>
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">Update</h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group mb-4">
+            <label>Term</label>
+            <input type="text" [(ngModel)]="selectedTerm" [ngModelOptions]="{standalone: true}"  class="form-control" placeholder="Enter Term">
+          </div>
+          <div class="form-group">
+            <label>Definition</label>
+            <input type="text" [(ngModel)]="selectedDefinition" [ngModelOptions]="{standalone: true}" class="form-control" placeholder="Definition">
+          </div>
+          
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary"(click)="updateFn()">Update</button>
+        <button type="button" class="btn btn-danger" (click)="closeModal()">Cancel</button>
+      </div>
+    </ng-template>
+
+    <ng-template #deletetemplate>
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">Delete</h4>
+      </div>
+      <div class="modal-body">
+        <p class="form-txt">Are you sure, you want to delete this term?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="deleteFn()">Yes</button>
+        <button type="button" class="btn btn-danger" (click)="closeModal()">No</button>
+      </div>
+    </ng-template>

@@ -1,0 +1,5 @@
+.glossary-body {padding: 15px 20px;}
+button.btn.edit-btn {background: green;color: #fff;padding: 4px 20px;}
+button.btn.del-btn {background: red;padding: 4px 20px;color: #fff;margin-left: 10px;}
+.create-glossary {padding: 15px 20px;text-align: right;}
+button.btn.btn-create {background: #1c6dd8;color: #fff;padding: 5px 20px;}
