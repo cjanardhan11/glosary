@@ -44,3 +44,40 @@
       float: none;
     }
   }
+
+
+
+/* src/Offcanvas.css */
+.offcanvas {
+  position: fixed;
+  top: 0;
+  right: -300px; /* Initially offscreen */
+  width: 300px;
+  height: 100%;
+  background-color: #333;
+  color: white;
+  transition: right 0.3s ease;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+.offcanvas.open {
+  right: 0; /* When open, slide the offcanvas into view */
+}
+
+.offcanvas-content {
+  padding: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
