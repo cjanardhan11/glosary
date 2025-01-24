@@ -1,0 +1,156 @@
+If you want to dynamically execute SSH commands based on the input provided via an API (for example, using Express.js), you can create a REST API that accepts the `target server`, `remote user`, `sidadm`, and `linux command` as parameters in a request and then uses the SSH connection to execute the command.
+
+Here’s how you can build that API using **Express.js** in Node.js.
+
+### Steps:
+
+1. **Install dependencies**:
+   - `express` for building the REST API.
+   - `ssh2` for SSH connection to execute commands remotely.
+
+   Run the following commands to install the required packages:
+   ```bash
+   npm install express ssh2
+   ```
+
+2. **Create the API server**:
+   - Set up an Express server.
+   - Create a POST endpoint to accept dynamic parameters and execute the SSH command.
+
+### Example Code:
+
+```javascript
+const express = require('express');
+const { Client } = require('ssh2');
+const fs = require('fs');
+
+const app = express();
+const port = 3000;
+
+// Middleware to parse JSON requests
+app.use(express.json());
+
+// API to execute the SSH command dynamically
+app.post('/execute-command', (req, res) => {
+  const { targetServer, remoteUser, sidadm, linuxCommand } = req.body;
+
+  // Validate input
+  if (!targetServer || !remoteUser || !sidadm || !linuxCommand) {
+    return res.status(400).json({ error: 'Missing required parameters.' });
+  }
+
+  // SSH configuration
+  const sshConfig = {
+    host: targetServer,
+    port: 22,
+    username: remoteUser,
+    privateKey: fs.readFileSync('<path to private key>'), // Or use password: 'password' if necessary
+  };
+
+  const command = `su - "${sidadm}" -c "${linuxCommand}"`;
+
+  const conn = new Client();
+
+  conn.on('ready', () => {
+    console.log('SSH Connection established.');
+    conn.exec(command, (err, stream) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error executing SSH command', details: err.message });
+      }
+
+      let output = '';
+      let errorOutput = '';
+
+      stream.on('close', (code, signal) => {
+        console.log(`Command executed with exit code ${code}`);
+        conn.end();
+        res.json({
+          success: true,
+          output,
+          error: errorOutput,
+          exitCode: code,
+        });
+      }).on('data', (data) => {
+        output += data.toString();
+      }).stderr.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+    });
+  }).connect(sshConfig);
+});
+
+// Start the Express server
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+```
+
+### Explanation:
+
+1. **Express Server**:
+   - We set up an Express server listening on port 3000.
+   - We define a POST route `/execute-command` that expects JSON data with parameters: `targetServer`, `remoteUser`, `sidadm`, and `linuxCommand`.
+
+2. **SSH Execution**:
+   - The SSH connection configuration uses the values from the request body.
+   - The command to execute is built as `su - <sidadm> -c <linuxCommand>`.
+   - The `ssh2` library is used to initiate the SSH connection and run the command on the remote server.
+
+3. **Handling Response**:
+   - The server collects both the standard output and standard error output.
+   - It responds with a JSON object containing the result of the command execution (`output`, `error`, and `exitCode`).
+
+4. **API Call**:
+   - The API expects a POST request with the following JSON body:
+   
+     ```json
+     {
+       "targetServer": "<target-server>",
+       "remoteUser": "<remote-user>",
+       "sidadm": "<sidadm>",
+       "linuxCommand": "<linux-command>"
+     }
+     ```
+
+### Example Request:
+
+You can use **Postman**, **curl**, or any HTTP client to make a POST request to the API. Here’s an example using **curl**:
+
+```bash
+curl -X POST http://localhost:3000/execute-command \
+  -H "Content-Type: application/json" \
+  -d '{
+    "targetServer": "192.168.1.100",
+    "remoteUser": "username",
+    "sidadm": "oracle",
+    "linuxCommand": "df -h"
+  }'
+```
+
+### Expected Response:
+
+If everything works as expected, you'll get a response like this:
+
+```json
+{
+  "success": true,
+  "output": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        50G   10G   40G  20% /\n",
+  "error": "",
+  "exitCode": 0
+}
+```
+
+If there’s an error with the SSH connection or the command execution, the response will include an error message:
+
+```json
+{
+  "error": "Error executing SSH command",
+  "details": "some error details"
+}
+```
+
+### Notes:
+- Replace `<path to private key>` with the path to your private SSH key, or you can use a password-based authentication by passing a `password` field in the `sshConfig`.
+- You can customize the server further, like adding authentication, error handling, and validation for the inputs, depending on your needs.
+
+This API allows dynamic execution of Linux commands on a remote server through SSH, all driven by user input via HTTP requests. Let me know if you'd like further clarifications or additions!
