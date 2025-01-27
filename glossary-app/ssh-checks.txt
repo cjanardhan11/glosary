@@ -154,3 +154,93 @@ If there’s an error with the SSH connection or the command execution, the resp
 - You can customize the server further, like adding authentication, error handling, and validation for the inputs, depending on your needs.
 
 This API allows dynamic execution of Linux commands on a remote server through SSH, all driven by user input via HTTP requests. Let me know if you'd like further clarifications or additions!
+
+
+
+
+To read data from **Azure Key Vault** using Node.js, you can use the Azure SDK for JavaScript. Here's how you can do it:
+
+### Prerequisites:
+1. **Azure Key Vault**: You should have an existing Azure Key Vault with some secrets stored in it.
+2. **Azure Identity**: Install the required packages (`@azure/identity` for authentication).
+3. **Azure Key Vault Secrets SDK**: Install the package to interact with Azure Key Vault secrets (`@azure/keyvault-secrets`).
+
+### Steps to Set Up:
+
+1. **Install the required packages**:
+   First, you need to install the Azure SDK libraries for Key Vault and authentication.
+
+   Run the following command to install both packages:
+
+   ```bash
+   npm install @azure/identity @azure/keyvault-secrets
+   ```
+
+2. **Write the code to read a secret**:
+
+   Here’s a basic example of how to retrieve a secret from Azure Key Vault using Node.js:
+
+   ```javascript
+   const { SecretClient } = require('@azure/keyvault-secrets');
+   const { DefaultAzureCredential } = require('@azure/identity');
+
+   // Define your Key Vault URL and secret name
+   const keyVaultName = "<your-key-vault-name>";
+   const secretName = "<your-secret-name>";
+
+   // Build the Key Vault URL
+   const keyVaultUrl = `https://${keyVaultName}.vault.azure.net/`;
+
+   // Set up the Default Azure Credential (will use the environment to authenticate)
+   const credential = new DefaultAzureCredential();
+
+   // Create the SecretClient using the Key Vault URL and credentials
+   const client = new SecretClient(keyVaultUrl, credential);
+
+   async function getSecret() {
+     try {
+       // Fetch the secret from Key Vault
+       const secret = await client.getSecret(secretName);
+       console.log(`The value of the secret is: ${secret.value}`);
+     } catch (error) {
+       console.error("Error retrieving the secret:", error);
+     }
+   }
+
+   // Call the function to retrieve the secret
+   getSecret();
+   ```
+
+### Explanation of the Code:
+
+1. **DefaultAzureCredential**: This is the recommended way to authenticate against Azure services in a development environment. It automatically uses the best available credential, such as:
+   - **Environment variables** (like `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` for service principal authentication).
+   - **Managed Identity** if the code is running in an Azure service that supports it (e.g., Azure VM, Azure Functions).
+
+2. **SecretClient**: This client is used to interact with Azure Key Vault secrets. It allows you to retrieve, set, and manage secrets stored in Key Vault.
+
+3. **getSecret()**: This function retrieves the secret with the given name from your Key Vault and prints the value.
+
+### Authentication in Local Development:
+When developing locally, you'll need to authenticate with Azure. The **DefaultAzureCredential** automatically picks up the necessary credentials from:
+- **Environment Variables**: You can set the following environment variables:
+  - `AZURE_CLIENT_ID`
+  - `AZURE_TENANT_ID`
+  - `AZURE_CLIENT_SECRET`
+  
+  For example:
+  
+  ```bash
+  export AZURE_CLIENT_ID="your-client-id"
+  export AZURE_TENANT_ID="your-tenant-id"
+  export AZURE_CLIENT_SECRET="your-client-secret"
+  ```
+
+- **Azure CLI Login**: If you have the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/) installed and logged in, `DefaultAzureCredential` will use your active login.
+
+### Notes:
+- **Managed Identity**: If you’re running the Node.js application in an Azure service like an Azure VM, App Service, or Function, you can use **Managed Identity** for authentication. You don’t need to set up environment variables manually in this case.
+- **Permissions**: Make sure the identity you're using to authenticate has the required permissions (e.g., **Get** permissions for secrets) in Azure Key Vault.
+
+### Conclusion:
+Using the Azure SDK for Node.js with `@azure/keyvault-secrets` and `@azure/identity`, you can easily read secrets from Azure Key Vault. Just make sure your application is properly authenticated and authorized to access the Key Vault.
