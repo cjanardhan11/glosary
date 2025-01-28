@@ -307,3 +307,76 @@ In such cases, you'll want to ensure that your environment variables are secured
 - Always ensure your system and users are configured in a way that reduces security risks. For automation scripts, it's better to use more secure methods like SSH keys or other safer alternatives if possible.
 
 Let me know if this works for you or if you'd like additional security-focused solutions!
+
+
+
+
+/*********************************
+C++
+**********************************/
+In C++10 and below versions, you don't have access to the `std::to_string()` function, which was introduced in C++11. However, you can convert an integer to a string using other methods. Below are a few common approaches:
+
+### 1. Using `std::ostringstream` (from `<sstream>`):
+The `std::ostringstream` class can be used to convert an integer to a string.
+
+```cpp
+#include <iostream>
+#include <sstream>
+
+int main() {
+    int num = 123;
+    std::ostringstream oss;
+    oss << num;
+    std::string str = oss.str();
+    std::cout << "The string is: " << str << std::endl;
+    return 0;
+}
+```
+
+### 2. Using `sprintf()` (from `<cstdio>`):
+The `sprintf()` function allows you to format the integer as a string.
+
+```cpp
+#include <iostream>
+#include <cstdio>
+
+int main() {
+    int num = 123;
+    char buffer[50];
+    sprintf(buffer, "%d", num);  // Convert integer to string
+    std::string str = buffer;
+    std::cout << "The string is: " << str << std::endl;
+    return 0;
+}
+```
+
+### 3. Using manual conversion (loop):
+If you want to convert the integer manually (without any additional libraries), you can do so by extracting digits one by one.
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    int num = 123;
+    std::string str;
+    
+    if (num == 0) {
+        str = "0";
+    } else {
+        while (num > 0) {
+            str = char('0' + num % 10) + str;
+            num /= 10;
+        }
+    }
+
+    std::cout << "The string is: " << str << std::endl;
+    return 0;
+}
+```
+
+These are a few ways to convert an integer to a string in C++10 and earlier. The `ostringstream` approach is one of the most commonly used and flexible methods.
+
+/**********************************************
+C++ END
+***********************************************/
