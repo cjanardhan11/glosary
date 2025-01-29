@@ -380,3 +380,38 @@ These are a few ways to convert an integer to a string in C++10 and earlier. The
 /**********************************************
 C++ END
 ***********************************************/
+
+
+
+/********************************************
+SSH except scripts
+*********************************************/
+#!/usr/bin/expect
+
+# Variables
+set user_password "your-password"       # Replace with your user and sudo password
+set target_user "username"               # The username you want to switch to
+set timeout 30                           # Set timeout to 30 seconds
+
+# SSH login and sudo command execution
+spawn ssh your-username@your.server.com
+
+# Handle SSH password prompt
+expect "password:"
+send "$user_password\r"
+
+# Run the sudo command to switch users
+expect "$ "
+send "echo $user_password | sudo -S su - $target_user\r"
+
+# Handle sudo password prompt
+expect "password for $target_user:"
+send "$user_password\r"
+
+# Interact with the shell as the new user
+interact
+
+
+/*****************************************
+END
+*****************************************/
