@@ -415,3 +415,30 @@ interact
 /*****************************************
 END
 *****************************************/
+
+
+
+const { spawn } = require('child_process');
+const expect = require('expect');
+
+const password = 'your_password'; // Replace with your actual password
+
+const command = spawn('sudo', ['-S', 'su']);  // '-S' flag allows sudo to take password from stdin
+
+// Handle password prompt
+command.stdout.on('data', (data) => {
+  console.log(data.toString());
+
+  if (data.toString().includes('Password:')) {
+    command.stdin.write(password + '\n'); // Provide password
+  }
+});
+
+// Capture any error or other output
+command.stderr.on('data', (data) => {
+  console.error('stderr:', data.toString());
+});
+
+command.on('exit', (code) => {
+  console.log(`Process exited with code: ${code}`);
+});
