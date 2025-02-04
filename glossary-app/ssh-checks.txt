@@ -442,3 +442,59 @@ command.stderr.on('data', (data) => {
 command.on('exit', (code) => {
   console.log(`Process exited with code: ${code}`);
 });
+
+
+
+
+........................................................................
+
+const { Client } = require('ssh2');
+const { spawn } = require('child_process');
+
+// SSH Connection configuration
+const sshConfig = {
+  host: 'your-target-server.com',
+  port: 22,
+  username: 'your-username', // The user you'll SSH in as
+  privateKey: require('fs').readFileSync('/path/to/your/private/key'), // Or use password: password: 'your-password'
+};
+
+// Password for sudo
+const sudoPassword = 'your_sudo_password'; // The password for 'your-username'
+
+// SSH client setup
+const ssh = new Client();
+
+ssh.on('ready', () => {
+  console.log('SSH Connection established');
+
+  // Execute `sudo -su username` to switch users
+  ssh.exec('sudo -u targetusername -i', (err, stream) => {
+    if (err) {
+      console.error('Error executing sudo command:', err);
+      return;
+    }
+
+    // Handle the output from the stream
+    stream.on('close', (code, signal) => {
+      console.log(`Stream closed with code ${code}, signal ${signal}`);
+      ssh.end(); // Close the SSH connection once the command completes
+    })
+    .on('data', (data) => {
+      console.log('STDOUT:', data.toString());
+
+      // If sudo prompts for a password, we need to provide it automatically
+      if (data.toString().includes('Password:')) {
+        stream.stdin.write(sudoPassword + '\n'); // Send the sudo password
+      }
+    })
+    .stderr.on('data', (data) => {
+      console.error('STDERR:', data.toString());
+    });
+  });
+
+}).on('error', (err) => {
+  console.error('SSH Connection error:', err);
+}).connect(sshConfig);
+
+........................................................................
