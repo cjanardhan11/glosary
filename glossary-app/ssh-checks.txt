@@ -498,3 +498,38 @@ ssh.on('ready', () => {
 }).connect(sshConfig);
 
 ........................................................................
+
+
+
+
+
+const { spawn } = require('child_process');
+
+// The SAP command you want to execute as admuser
+const sapCommand = 'sap_command_here'; 
+
+// Spawn a child process to execute 'sudo su - admuser'
+const process = spawn('sudo', ['su', '-', 'admuser'], {
+  stdio: ['pipe', 'pipe', 'pipe'] // pipe stdin, stdout, stderr
+});
+
+// Write the SAP command to the process' stdin after switching to admuser
+process.stdin.write(sapCommand + '\n');
+
+// Close the stdin to indicate the end of the input
+process.stdin.end();
+
+// Capture and output the standard output (stdout) from the process
+process.stdout.on('data', (data) => {
+  console.log('Output:', data.toString());
+});
+
+// Capture and output the standard error (stderr) from the process
+process.stderr.on('data', (data) => {
+  console.error('Error:', data.toString());
+});
+
+// Handle the process closing and output the exit code
+process.on('close', (code) => {
+  console.log(`Child process exited with code ${code}`);
+});
