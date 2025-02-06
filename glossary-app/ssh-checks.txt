@@ -713,3 +713,37 @@ fi
 /***********************************************************************
 end of udpated script
 ***********************************************************************/
+
+
+function executeScriptAsAdmuser(script) {
+  // We use 'sudo su - admuser -c' to pass the script inline
+  const command = `sudo su - admuser -c '${script}'`;
+
+  conn.exec(command, (err, stream) => {
+    if (err) {
+      console.error('Error executing the script as admuser:', err);
+      return;
+    }
+
+    // Capture output from the script
+    stream.on('data', (data) => {
+      console.log('STDOUT:', data.toString());
+    });
+
+    // Capture error output from the script
+    stream.on('stderr', (data) => {
+      console.error('STDERR:', data.toString());
+    });
+
+    // Handle the stream closing
+    stream.on('close', (code, signal) => {
+      console.log('Script execution finished with code:', code);
+      if (code === 0) {
+        console.log('SAP system stop/start script executed successfully!');
+      } else {
+        console.error('SAP system stop/start script failed.');
+      }
+      conn.end();
+    });
+  });
+}
