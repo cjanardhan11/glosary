@@ -768,7 +768,7 @@ check_sap_status() {
     RUNNING_COUNT=$(echo "$SAP_STATUS" | grep -o "Running" | wc -l)
 
     # Check if "Running" appears exactly 4 times
-    if [ $RUNNING_COUNT -eq 4 ]; then
+    if [ "$RUNNING_COUNT" -eq 4 ]; then
         return 0  # SAP system is running
     else
         return 1  # SAP system is down
@@ -841,7 +841,6 @@ wait_for_sap_to_start() {
 # Main logic of the script
 echo "Checking current SAP system status..."
 echo "SAP System Hostname : "
-
 
 # Check if the SAP system is up (Running count is exactly 4)
 if check_sap_status; then
