@@ -1,0 +1,98 @@
+if (commandType === "sap command") {
+    console.log("entering into script execution by sudo - su....");
+    const su_command = `sudo su - ${SID.toLowerCase()}adm -c '${script}'`;
+    console.log("entering into script execution by sudo - su....", su_command);
+
+    conn.exec(su_command, (err, stream) => {
+        if (err) throw err;
+        let output = '';
+        let errorOutput = '';
+
+        stream
+            .on('close', (code, signal) => {
+                console.log(`Stream :: close :: code: ${code}, signal: ${signal}`);
+                console.log('error to execute script::: ', errorOutput);
+                console.log('output to execute script::: ', output);
+
+                // Dynamically format the output to preserve indentation and make certain parts bold
+                const formattedOutput = output
+                    // Bold the dynamic key-value pairs (if they follow a "key : value" format)
+                    .replace(/([A-Za-z\s]+:\s)([^\n]+)/g, (match, p1, p2) => {
+                        // Bold the "key" part (the text before ":") and leave the value normal
+                        return p1.replace(p2, `<b>${p2}</b>`);
+                    })
+                    // Replace newlines with <br> for line breaks
+                    .replace(/\n/g, '<br>')
+                    // Preserve indentation (Detect lines starting with spaces)
+                    .replace(/^(\s+)/g, (match, p1) => {
+                        return `&nbsp;`.repeat(p1.length) // Replace leading spaces with `&nbsp;`
+                    });
+
+                // Send the formatted HTML response
+                const htmlResponse = `
+                    <div class="content">
+                        <h1>SAP Script Execution Result</h1>
+                        <div class="output">
+                            <h3>Output:</h3>
+                            <pre>${formattedOutput}</pre>
+                        </div>
+                        <div class="error">
+                            <h3>Error Output:</h3>
+                            <pre>${errorOutput.replace(/\n/g, '<br>')}</pre>
+                        </div>
+                    </div>
+                `;
+
+                // Send HTML content as the response
+                conn.end();
+                callback(null, { htmlResponse });
+                resolve();
+            })
+            .on('data', data => {
+                output += data.toString();
+                console.log('output to execute script::: ', output);
+            })
+            .stderr.on('data', data => {
+                errorOutput += data.toString();
+                console.log('Failed execute script::: ', errorOutput);
+            });
+    });
+}
+
+
+
+/***************************************
+HTML
+***************************************/
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';  // Assuming you're using axios to fetch data
+
+const SapOutputComponent = () => {
+  const [htmlContent, setHtmlContent] = useState('');
+
+  useEffect(() => {
+    // Function to fetch the HTML content from the API
+    const fetchSapOutput = async () => {
+      try {
+        const response = await axios.get('/api/sap-output');  // Replace with your API endpoint
+        setHtmlContent(response.data.htmlResponse);  // Assuming the response contains the HTML content in 'htmlResponse'
+      } catch (error) {
+        console.error("Error fetching SAP output:", error);
+      }
+    };
+
+    fetchSapOutput();
+  }, []);
+
+  return (
+    <div className="sap-output-container">
+      <h2>SAP Script Execution Result</h2>
+      <div
+        className="output"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    </div>
+  );
+};
+
+export default SapOutputComponent;
