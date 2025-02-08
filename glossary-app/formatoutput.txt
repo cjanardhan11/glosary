@@ -95,4 +95,99 @@ const SapOutputComponent = () => {
   );
 };
 
+
+
+
+if (commandType === "sap command") {
+    console.log("entering into script execution by sudo - su....");
+    const su_command = `sudo su - ${SID.toLowerCase()}adm -c '${script}'`;
+    console.log("entering into script execution by sudo - su....", su_command);
+
+    conn.exec(su_command, (err, stream) => {
+        if (err) throw err;
+        let output = '';
+        let errorOutput = '';
+
+        stream
+            .on('close', (code, signal) => {
+                console.log(`Stream :: close :: code: ${code}, signal: ${signal}`);
+                console.log('error to execute script::: ', errorOutput);
+                console.log('output to execute script::: ', output);
+
+                // Dynamically format the output to preserve indentation and align keys and values
+                const formattedOutput = formatOutput(output);
+                
+                // Send the formatted HTML response
+                const htmlResponse = `
+                    <div class="content">
+                        <h1>SAP Script Execution Result</h1>
+                        <div class="output">
+                            <h3>Output:</h3>
+                            <pre>${formattedOutput}</pre>
+                        </div>
+                        <div class="error">
+                            <h3>Error Output:</h3>
+                            <pre>${errorOutput.replace(/\n/g, '<br>')}</pre>
+                        </div>
+                    </div>
+                `;
+
+                // Send HTML content as the response
+                conn.end();
+                callback(null, { htmlResponse });
+                resolve();
+            })
+            .on('data', data => {
+                output += data.toString();
+                console.log('output to execute script::: ', output);
+            })
+            .stderr.on('data', data => {
+                errorOutput += data.toString();
+                console.log('Failed execute script::: ', errorOutput);
+            });
+    });
+
+    // Function to format the output
+    function formatOutput(output) {
+        const lines = output.split('\n');
+        
+        // Step 1: Find the longest key (the part before the ":")
+        let maxKeyLength = 0;
+        const keyValuePairs = [];
+
+        // Step 2: Extract key-value pairs
+        lines.forEach(line => {
+            const match = line.match(/^(\s*)([A-Za-z\s]+)(:\s)([^\n]+)/);
+            if (match) {
+                const key = match[2];
+                const value = match[4];
+                maxKeyLength = Math.max(maxKeyLength, key.length);
+                keyValuePairs.push({ key, value, indentation: match[1] });
+            }
+        });
+
+        // Step 3: Align the output
+        let formattedOutput = lines.map(line => {
+            const match = line.match(/^(\s*)([A-Za-z\s]+)(:\s)([^\n]+)/);
+            if (match) {
+                const key = match[2];
+                const value = match[4];
+                const indentation = match[1];
+
+                // Calculate spaces to add to align the ":"
+                const spacesToAdd = maxKeyLength - key.length;
+
+                // Construct the formatted line
+                const alignedLine = `${indentation}<b>${key}</b>${' '.repeat(spacesToAdd)}: ${value}`;
+                return alignedLine;
+            }
+            return line; // If not a key-value pair, return the line unchanged
+        }).join('\n');
+
+        // Return the formatted output
+        return formattedOutput.replace(/\n/g, '<br>'); // Convert newlines to <br>
+    }
+}
+
+
 export default SapOutputComponent;
