@@ -191,3 +191,119 @@ if (commandType === "sap command") {
 
 
 export default SapOutputComponent;
+
+
+
+
+
+
+
+
+
+
+
+#!/bin/bash
+
+# Accept arguments
+ID=$1 # SAP Hostname
+instance=$2 # SAP Instance
+
+# Define SAP system-related variables
+SAP_SYSTEM_STATUS_CMD="sapcontrol -nr 00 -function GetProcessList"  # Modify based on your environment
+SAP_STOP_CMD="sapcontrol -nr 00 -function Stop"  # Modify based on your environment
+SAP_START_CMD="sapcontrol -nr 00 -function Start"  # Modify based on your environment
+
+# Function to check if the SAP system is up
+check_sap_status() {
+    # Run the command to check the SAP status
+    SAP_STATUS=$( $SAP_SYSTEM_STATUS_CMD )
+    
+    # Check if the system is running
+    RUNNING_COUNT=$(echo "$SAP_STATUS" | grep -o "Running" | wc -l)
+    # Check if "Running" appears exactly 4 times
+    if [ "$RUNNING_COUNT" -eq 4 ]; then
+        return 0  # SAP system is running
+    else
+        echo "SAP Process Status: Stopped"
+        return 1  # SAP system is down
+    fi
+}
+
+# Function to stop the SAP system
+stop_sap_system() {
+    echo "Found SAP system is running, initiating SAP stop operation now..."
+    echo "Executing Command: sapcontrol -nr 00 -function Stop"
+    $SAP_STOP_CMD | grep -vE '^[0-9]{2}\.[0-9]{2}\.[0-9]{4}' | grep -v 'Stop' | grep -v 'OK'
+    if [ $? -eq 0 ]; then
+        echo "SAP stop operation in progress..."
+        wait_for_sap_to_stop
+    else
+        echo "Failed to stop SAP system."
+        exit 1
+    fi
+}
+
+# Function to wait until SAP system stops
+wait_for_sap_to_stop() {
+    while true; do
+        if ! check_sap_status; then
+            echo "SAP stop operation completed..."
+            break
+        fi
+        echo "Checked and found SAP shutdown still in progress, Waiting..."
+        sleep 10  # Check every 10 seconds
+    done
+}
+
+# Function to start the SAP system
+start_sap_system() {
+    echo "Starting SAP system..."
+    $SAP_START_CMD | grep -vE '^[0-9]{2}\.[0-9]{2}\.[0-9]{4}' | grep -v 'Start' | grep -v 'OK'
+    if [ $? -eq 0 ]; then
+        echo "Validating SAP system status after start."
+        wait_for_sap_to_start
+    else
+        echo "[ERROR] Failed to start SAP system."
+        exit 1
+    fi
+}
+
+# Function to wait until SAP system starts
+wait_for_sap_to_start() {
+    while true; do
+        if check_sap_status; then
+            echo "SAP Process Status: Running"
+            echo "SAP Stop Execution End Time: $(date)"
+            echo "[SUCCESS] SAP system is up and running."
+            break
+        fi
+        echo "Checked and found SAP start still in progress, Waiting..."
+        sleep 10  # Check every 10 seconds
+    done
+}
+
+# Main logic of the script
+echo "Checking current SAP system status..."
+echo "SAP System Hostname: $ID"  # Use $ID here
+
+# Check if the SAP system is up
+if check_sap_status; then
+    echo "SAP Process Status: Running"
+    stop_sap_system
+    sleep 30
+    # Check SAP system status again after stop
+    echo "Validating SAP system status after stop."
+    if check_sap_status; then
+        echo "[ERROR] SAP system could not be stopped, please investigate!"
+        exit 1
+    else
+        echo "SAP Process Status: Stopped"
+        echo "SAP Stop Execution End Time: $(date)"
+        echo "[SUCCESS] SAP system is stopped successfully!"
+        # Start the SAP system as it is down
+        start_sap_system
+    fi
+else
+    echo "SAP system is down. Starting SAP system..."
+    start_sap_system
+fi
