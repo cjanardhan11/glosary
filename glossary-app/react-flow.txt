@@ -61,3 +61,75 @@ const Workflow = () => {
 };
 
 export default Workflow;
+
+
+///////////////////////////////////////////////////////////////////
+import React, { useState, useCallback } from 'react';
+import ReactFlow, { addEdge, ReactFlowProvider, useEdgesState, useNodesState, Controls } from 'react-flow-renderer';
+
+// Sample workflow data
+const initialNodes = [
+  { id: '1', type: 'input', data: { label: 'Start', nextNodeId: null }, position: { x: 0, y: 0 } },
+  { id: '2', type: 'default', data: { label: 'Node 2', nextNodeId: null }, position: { x: 200, y: 0 } },
+  { id: '3', type: 'default', data: { label: 'Node 3', nextNodeId: null }, position: { x: 400, y: 0 } },
+  { id: '4', type: 'output', data: { label: 'End', nextNodeId: null }, position: { x: 600, y: 0 } }
+];
+
+const initialEdges = [];
+
+const Workflow = () => {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Function to handle edge update and update the source node with target node ID
+  const handleEdgeUpdate = useCallback(
+    (edge) => {
+      if (!edge) return; // Ensure edge is defined before proceeding
+
+      const { source, target } = edge; // Extract source and target from edge
+
+      if (!source || !target) {
+        console.error("Invalid edge data:", edge);
+        return;
+      }
+
+      // Update the source node with the target node ID (i.e., the next node to execute)
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === source) {
+            node.data = { ...node.data, nextNodeId: target }; // Update source node data
+          }
+          return node;
+        })
+      );
+
+      // Add the edge to the state (creating the connection)
+      setEdges((eds) => addEdge(edge, eds));
+    },
+    [setNodes, setEdges] // Ensure to update state correctly
+  );
+
+  return (
+    <div style={{ height: '600px' }}>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={handleEdgeUpdate} // Handling the connection event
+          style={{ width: '100%', height: '100%' }}
+        >
+          <Controls />
+        </ReactFlow>
+      </ReactFlowProvider>
+
+      <div>
+        <h3>Nodes with Next Execution Node IDs:</h3>
+        <pre>{JSON.stringify(nodes.map(node => ({ id: node.id, nextNodeId: node.data.nextNodeId })), null, 2)}</pre>
+      </div>
+    </div>
+  );
+};
+
+export default Workflow;
